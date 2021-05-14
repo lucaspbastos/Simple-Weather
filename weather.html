@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <style>
+            .load {
+                width: 100px;
+                height: 100px;
+                border: 10px solid #000000;
+                border-top: 10px solid blue;
+                border-radius: 50%;
+                animation: AAA .7s linear infinite;
+            }
+
+            @keyframes AAA {
+                0% { transform: rotate(0deg); }
+                50% { transform: rotate(90deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    </head> 
+    <body>
+        <div class="container">
+            <h1>Weather</h1>
+            <div role="alert" id="geo">
+            </div>
+            <div class="form-row">
+                <div class="col">
+                    <input class="form-control" id="zip" type="text" name="zip" value="" placeholder="ZIP/Postal Code" autocomplete="off">
+                </div>
+                <div class="col">
+                    <input class="form-control" id="country" type="text" name="country" placeholder="Country Code" value="us" autocomplete="off">
+                </div>
+                <button type="button" class="btn btn-primary" id="submit" onclick="ge = false">Get Weather</button>
+                <button type="button" class="btn btn-secondary" id="submitgeo" onclick="ge = true">Geolocation</button>
+            </div>
+
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="temp" id="temp1" value="F" checked>
+                <label class="form-check-label" for="temp1">Fahrenheit</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="temp" id="temp2" value="C">
+                <label class="form-check-label" for="temp2">Celsius</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="temp" id="temp3" value="K">
+                <label class="form-check-label" for="temp3">Kelvin</label>
+            </div>
+            <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="spincheck">
+                <label class="form-check-label" for="spincheck">Spinner Delay</label>
+            </div>
+            <div style="margin:auto;text-align:center" id="report"></div>
+        </div>
+    </body>
+    <script type = "text/javascript">
+    var ge = false;
+    var geolat;
+    var geolon;
+    var sleep = 0;
+    $(document).ready(function(){
+        getLocation();
+        $("button").click(function() {
+            var country = $("#country").val();
+            if ($.trim(country).length == 0) country = "us";
+            var zip = $("#zip").val();
+            if ($.trim(zip).length == 0) zip = 0;
+            if (!zip && geolat=="none") {
+                document.getElementById("geo").className = "alert alert-danger";
+                document.getElementById("geo").innerHTML = "Invalid: no ZIP code provided.";
+                return;
+            }
+            $.ajax({
+                    type: "GET",
+                    url: "weather.php",
+                    data: "zip="+zip+"&country="+country+"&lat="+geolat+"&lon="+geolon+"&ge="+ge,
+                    beforeSend: function() {
+                        $("#report").html("<div style=;margin:auto;text-align:center' class='load'></div>");
+                        if ($("#spincheck").is(":checked")) sleep = 3000;
+                        else sleep = 0;
+                    },
+                    error: function(xhr, status, error) {
+                        alert("Error "+xhr.status+": "+error);
+                    },
+                    success: function(result) {
+                        document.getElementById("geo").className = "";
+                        document.getElementById("geo").innerHTML = "";
+                        setTimeout(function() {
+                            try {
+                                var r = JSON.parse(result);
+                            } catch(e) {
+                                document.getElementById("geo").className = "alert alert-danger";
+                                document.getElementById("geo").innerHTML = "Invalid input.";
+                                $("#report").html("");
+                                return;
+                            }
+                            var val = $('input[name="temp"]:checked').val();
+                            var temp = r.main.temp;
+                            var min = r.main.temp_min;
+                            var max = r.main.temp_max;
+                            var sunrise = r.sys.sunrise;
+                            var sunset = r.sys.sunset;
+                            var sunrisedate = new Date(0);
+                            var sunsetdate = new Date(0);
+                            sunrisedate.setUTCSeconds(sunrise);
+                            sunsetdate.setUTCSeconds(sunset);
+                            var lon = r.coord.lon;
+                            var lat = r.coord.lat;
+                            if (val=="C") {
+                                min = (min-273.15).toFixed(1);
+                                max = (max-273.15).toFixed(1);
+                                temp = (temp-273.15).toFixed(1);
+                            } else if (val=="F") {
+                                min = ((min-273.15)*1.8+32).toFixed(1);
+                                max = ((max-273.15)*1.8+32).toFixed(1);
+                                temp = ((temp-273.15)*1.8+32).toFixed(1);
+                            }
+                            display =   "<br><b>City</b>: "+r.name+
+                                        "<br><b>Coordinates</b>: "+lat+", "+lon+
+                                        "<br><b>Temperature</b>: "+temp+"&deg;"+val+
+                                        "<br><b>High</b>: "+max+"&deg;"+val+", <b>Low</b>: "+min+"&deg;"+val+
+                                        "<br><b>Humidity</b>: "+r.main.humidity+"%, <b>Wind</b>: "+(r.wind.speed*2.2369).toFixed(1)+"mph "+compass(r.wind.deg)+
+                                        "<br><b>Weather</b>: "+r.weather[0].main+
+                                        "<img src='https://openweathermap.org/img/wn/"+r.weather[0].icon+"@2x.png' />"+
+                                        "<br><b>Sunrise</b>: "+fixTime(sunrisedate.getHours()%12)+":"+fixTime(sunrisedate.getMinutes())+":"+fixTime(sunrisedate.getSeconds())+" AM"+
+                                        "<br><b>Sunset</b>: "+fixTime(sunsetdate.getHours()%12)+":"+fixTime(sunsetdate.getMinutes())+":"+fixTime(sunsetdate.getSeconds())+" PM"+
+                                        "<br><hr><p>Next five International Space Station passes:</p>"+
+                                        "<ul id='isspass'></ul>";
+                            $("#report").html(display);
+                            $.ajax({
+                                type: "GET",
+                                url: "iss.php",
+                                data: "lat="+lat+"&lon="+lon,
+                                error: function(xhr, status, error) {
+                                    alert("Error "+xhr.status+": "+error);
+                                },
+                                success: function(result) {
+                                    var res = JSON.parse(result);
+                                    res['response'].forEach(function (d) {
+                                        var date = new Date(d['risetime']*1000);
+                                        $('#isspass').append('<li>' + date.toLocaleString() + '</li>');
+                                    });
+                                }
+                            });
+                        }, sleep);
+                    }
+                });
+        });
+    });
+    function fixTime(time) {
+        if(time<10) time = "0"+time;
+        return time;
+    }
+
+    function compass(deg) {
+        deg = deg%360;
+        if (0 <= deg && deg < 45) return "N";
+        if (45 <= deg && deg < 90) return "NE";
+        if (90 <= deg && deg < 135) return "E";
+        if (135 <= deg && deg < 180) return "SE";
+        if (180 <= deg && deg < 225) return "S";
+        if (225 <= deg && deg < 270) return "SW";
+        if (270 <= deg && deg < 315) return "W";
+        if (315 <= deg && deg < 360) return "NW";
+        return "";
+    }
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showPosition, showError);
+            return 1;
+        } else {
+            document.getElementById("geo").innerHTML = "Geolocation is not supported by this browser.";
+            return 0;
+        }
+    }
+
+    function showPosition(position) {
+        geolat = position.coords.latitude;
+        geolon = position.coords.longitude;
+    }
+
+    function showError(error) {
+        $("#submitgeo").prop("disabled",true);
+        switch(error.code) {
+            case error.PERMISSION_DENIED:
+                document.getElementById("geo").className = "alert alert-danger";
+                document.getElementById("geo").innerHTML = "User denied the request for Geolocation.";
+                break;
+            case error.POSITION_UNAVAILABLE:
+                document.getElementById("geo").className = "alert alert-danger";
+                document.getElementById("geo").innerHTML = "Location information is unavailable.";
+                break;
+            case error.TIMEOUT:
+                document.getElementById("geo").className = "alert alert-danger";
+                document.getElementById("geo").innerHTML = "The request to get user location timed out.";
+                break;
+            case error.UNKNOWN_ERROR:
+                document.getElementById("geo").className = "alert alert-danger";
+                document.getElementById("geo").innerHTML = "An unknown error occurred.";
+                break;
+        }
+    }
+    </script>
+</html>
