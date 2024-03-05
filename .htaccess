@@ -1,0 +1,5 @@
+Header set Content-Security-Policy " \
+    default-src 'self' 'unsafe-inline' *.bootstrapcdn.com; \
+    script-src 'self' 'unsafe-inline' *.googleapis.com *.cloudflare.com *.jquery.com *.bootstrapcdn.com; \
+    img-src 'self' *.cloudflare.com openweathermap.org; \
+"

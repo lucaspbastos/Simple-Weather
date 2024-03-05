@@ -56,8 +56,8 @@
                     <input class="form-control" id="country" type="text" name="country" placeholder="Country Code"
                         value="us" autocomplete="off">
                 </div>
-                <button type="button" class="btn btn-primary" id="submit" onclick="ge = false">Get Weather</button>
-                <button type="button" class="btn btn-secondary" id="submitgeo" onclick="ge = true">Geolocation</button>
+                <button type="button" class="btn btn-primary" id="submit">Get Weather</button>
+                <button type="button" class="btn btn-secondary" id="submitgeo">Geolocation</button>
             </div>
 
             <div class="form-check form-check-inline">
@@ -86,6 +86,12 @@
         var sleep = 0;
         $(document).ready(function () {
             getLocation();
+            $("#submitgeo").click(function () {
+                ge = true
+            });
+            $("#submit").click(function () {
+                ge = false
+            });
             $("button").click(function () {
                 var country = $("#country").val();
                 if ($.trim(country).length == 0) country = "us";
